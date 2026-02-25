@@ -1,39 +1,15 @@
-import type { Express, RequestHandler } from "express";
+import type { Express } from "express";
 import { createServer, type Server } from "http";
-import session from "express-session";
 import { storage } from "./storage";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { insertTileSchema, insertCategorySchema } from "@shared/schema";
-
-function isAzure(): boolean {
-  return !!(process.env.AZURE_SQL_CONNECTION_STRING || process.env.AZURE_SQL_SERVER);
-}
-
-const azureBypassAuth: RequestHandler = (req, res, next) => {
-  next();
-};
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  let isAuthenticated: RequestHandler;
-
-  if (isAzure()) {
-    console.log("Azure environment detected — skipping Replit Auth");
-    app.set("trust proxy", 1);
-    app.use(session({
-      secret: process.env.SESSION_SECRET || "azure-session-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { httpOnly: true, secure: true, maxAge: 7 * 24 * 60 * 60 * 1000 },
-    }));
-    isAuthenticated = azureBypassAuth;
-  } else {
-    const auth = await import("./replit_integrations/auth/index.js");
-    await auth.setupAuth(app);
-    auth.registerAuthRoutes(app);
-    isAuthenticated = auth.isAuthenticated;
-  }
+  await setupAuth(app);
+  registerAuthRoutes(app);
 
   app.get("/api/tiles", isAuthenticated, async (req: any, res) => {
     try {
