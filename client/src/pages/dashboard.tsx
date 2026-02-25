@@ -131,12 +131,18 @@ export default function DashboardPage() {
               Back
             </Button>
             <div className="h-5 w-px bg-border" />
-            <div
-              className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-              style={{ backgroundColor: activeTile.color + "18", color: activeTile.color }}
-            >
-              <DynamicIcon name={activeTile.icon} className="w-3.5 h-3.5" />
-            </div>
+            {activeTile.icon.startsWith("/") || activeTile.icon.startsWith("http") ? (
+              <div className="w-7 h-7 rounded-md shrink-0 overflow-hidden">
+                <img src={activeTile.icon} alt={activeTile.title} className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div
+                className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                style={{ backgroundColor: activeTile.color + "18", color: activeTile.color }}
+              >
+                <DynamicIcon name={activeTile.icon} className="w-3.5 h-3.5" />
+              </div>
+            )}
             <span className="font-medium text-sm truncate" data-testid="text-embedded-app-title">{activeTile.title}</span>
           </div>
         </header>

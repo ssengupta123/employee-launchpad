@@ -40,16 +40,18 @@ export function TileCard({ tile, pinned, onTogglePin, onLaunch, showPinButton = 
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-4 min-w-0 flex-1">
-          <div
-            className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
-            style={{ backgroundColor: tile.color + "18", color: tile.color }}
-          >
-            {useImage ? (
-              <img src={tile.icon} alt={tile.title} className="w-6 h-6 object-contain" />
-            ) : (
-              Icon && <Icon className="w-5 h-5" />
-            )}
-          </div>
+          {useImage ? (
+            <div className="w-11 h-11 rounded-lg shrink-0 overflow-hidden">
+              <img src={tile.icon} alt={tile.title} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div
+              className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: tile.color + "18", color: tile.color }}
+            >
+              {Icon && <Icon className="w-5 h-5" />}
+            </div>
+          )}
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-sm truncate" data-testid={`text-tile-title-${tile.id}`}>
