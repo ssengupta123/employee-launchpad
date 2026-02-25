@@ -1,9 +1,14 @@
 import { users, type User, type UpsertUser } from "@shared/models/auth";
-import { db } from "../../db";
+import { db as maybeDb } from "../../db";
 import { eq } from "drizzle-orm";
 
-// Interface for auth storage operations
-// (IMPORTANT) These user operations are mandatory for Replit Auth.
+function getDb() {
+  if (!maybeDb) {
+    throw new Error("PostgreSQL database not initialized");
+  }
+  return maybeDb;
+}
+
 export interface IAuthStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
@@ -11,12 +16,12 @@ export interface IAuthStorage {
 
 class AuthStorage implements IAuthStorage {
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await getDb().select().from(users).where(eq(users.id, id));
     return user;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await getDb()
       .insert(users)
       .values(userData)
       .onConflictDoUpdate({

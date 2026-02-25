@@ -5,7 +5,7 @@ import {
   type AdminUser,
   categories, tiles, userTiles, adminUsers,
 } from "@shared/schema";
-import { db } from "./db";
+import { db as maybeDb } from "./db";
 import { eq, and, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -34,32 +34,43 @@ export interface IStorage {
   seedData(): Promise<void>;
 }
 
+function getDb() {
+  if (!maybeDb) {
+    throw new Error("PostgreSQL database not initialized");
+  }
+  return maybeDb;
+}
+
 export class DatabaseStorage implements IStorage {
+  private get db() {
+    return getDb();
+  }
+
   async getCategories(): Promise<Category[]> {
-    return db.select().from(categories).orderBy(asc(categories.sortOrder));
+    return this.db.select().from(categories).orderBy(asc(categories.sortOrder));
   }
 
   async getCategoryById(id: string): Promise<Category | undefined> {
-    const [cat] = await db.select().from(categories).where(eq(categories.id, id));
+    const [cat] = await this.db.select().from(categories).where(eq(categories.id, id));
     return cat;
   }
 
   async createCategory(data: InsertCategory): Promise<Category> {
-    const [cat] = await db.insert(categories).values(data).returning();
+    const [cat] = await this.db.insert(categories).values(data).returning();
     return cat;
   }
 
   async updateCategory(id: string, data: Partial<InsertCategory>): Promise<Category | undefined> {
-    const [cat] = await db.update(categories).set(data).where(eq(categories.id, id)).returning();
+    const [cat] = await this.db.update(categories).set(data).where(eq(categories.id, id)).returning();
     return cat;
   }
 
   async deleteCategory(id: string): Promise<void> {
-    await db.delete(categories).where(eq(categories.id, id));
+    await this.db.delete(categories).where(eq(categories.id, id));
   }
 
   async getTiles(): Promise<TileWithCategory[]> {
-    const result = await db
+    const result = await this.db
       .select()
       .from(tiles)
       .leftJoin(categories, eq(tiles.categoryId, categories.id))
@@ -72,17 +83,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTileById(id: string): Promise<Tile | undefined> {
-    const [tile] = await db.select().from(tiles).where(eq(tiles.id, id));
+    const [tile] = await this.db.select().from(tiles).where(eq(tiles.id, id));
     return tile;
   }
 
   async createTile(data: InsertTile): Promise<Tile> {
-    const [tile] = await db.insert(tiles).values(data).returning();
+    const [tile] = await this.db.insert(tiles).values(data).returning();
     return tile;
   }
 
   async updateTile(id: string, data: Partial<InsertTile>): Promise<Tile | undefined> {
-    const [tile] = await db
+    const [tile] = await this.db
       .update(tiles)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(tiles.id, id))
@@ -91,21 +102,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTile(id: string): Promise<void> {
-    await db.delete(tiles).where(eq(tiles.id, id));
+    await this.db.delete(tiles).where(eq(tiles.id, id));
   }
 
   async getUserTiles(userId: string): Promise<UserTile[]> {
-    return db.select().from(userTiles).where(eq(userTiles.userId, userId)).orderBy(asc(userTiles.sortOrder));
+    return this.db.select().from(userTiles).where(eq(userTiles.userId, userId)).orderBy(asc(userTiles.sortOrder));
   }
 
   async setUserTile(userId: string, tileId: string, pinned: boolean): Promise<UserTile> {
-    const existing = await db
+    const existing = await this.db
       .select()
       .from(userTiles)
       .where(and(eq(userTiles.userId, userId), eq(userTiles.tileId, tileId)));
 
     if (existing.length > 0) {
-      const [ut] = await db
+      const [ut] = await this.db
         .update(userTiles)
         .set({ pinned })
         .where(and(eq(userTiles.userId, userId), eq(userTiles.tileId, tileId)))
@@ -113,36 +124,36 @@ export class DatabaseStorage implements IStorage {
       return ut;
     }
 
-    const [ut] = await db.insert(userTiles).values({ userId, tileId, pinned }).returning();
+    const [ut] = await this.db.insert(userTiles).values({ userId, tileId, pinned }).returning();
     return ut;
   }
 
   async removeUserTile(userId: string, tileId: string): Promise<void> {
-    await db.delete(userTiles).where(and(eq(userTiles.userId, userId), eq(userTiles.tileId, tileId)));
+    await this.db.delete(userTiles).where(and(eq(userTiles.userId, userId), eq(userTiles.tileId, tileId)));
   }
 
   async isAdmin(userId: string): Promise<boolean> {
-    const [admin] = await db.select().from(adminUsers).where(eq(adminUsers.userId, userId));
+    const [admin] = await this.db.select().from(adminUsers).where(eq(adminUsers.userId, userId));
     return !!admin;
   }
 
   async hasAnyAdmin(): Promise<boolean> {
-    const admins = await db.select().from(adminUsers).limit(1);
+    const admins = await this.db.select().from(adminUsers).limit(1);
     return admins.length > 0;
   }
 
   async makeAdmin(userId: string): Promise<AdminUser> {
-    const existing = await db.select().from(adminUsers).where(eq(adminUsers.userId, userId));
+    const existing = await this.db.select().from(adminUsers).where(eq(adminUsers.userId, userId));
     if (existing.length > 0) return existing[0];
-    const [admin] = await db.insert(adminUsers).values({ userId }).returning();
+    const [admin] = await this.db.insert(adminUsers).values({ userId }).returning();
     return admin;
   }
 
   async seedData(): Promise<void> {
-    const existingCategories = await db.select().from(categories);
+    const existingCategories = await this.db.select().from(categories);
     if (existingCategories.length > 0) return;
 
-    const [finance] = await db.insert(categories).values({
+    const [finance] = await this.db.insert(categories).values({
       name: "Finance",
       description: "Financial management tools",
       icon: "Calculator",
@@ -150,7 +161,7 @@ export class DatabaseStorage implements IStorage {
       sortOrder: 0,
     }).returning();
 
-    await db.insert(tiles).values([
+    await this.db.insert(tiles).values([
       {
         title: "Finance Hub",
         description: "Central finance portal for reporting, budgets, and financial operations",
