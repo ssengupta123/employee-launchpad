@@ -373,7 +373,7 @@ export class AzureSqlStorage implements IStorage {
       .input("title", sql.NVarChar, "Finance Hub")
       .input("description", sql.NVarChar, "Central finance portal for reporting, budgets, and financial operations")
       .input("url", sql.NVarChar, "https://financehub-c2bna3f0hphvgqbj.australiaeast-01.azurewebsites.net/")
-      .input("icon", sql.NVarChar, "Landmark")
+      .input("icon", sql.NVarChar, "/financehub-logo.ico")
       .input("color", sql.NVarChar, "#22C55E")
       .input("categoryId", sql.NVarChar, catId)
       .query(`INSERT INTO tiles (id, title, description, url, icon, color, category_id, is_global, sort_order) VALUES (@id, @title, @description, @url, @icon, @color, @categoryId, 1, 0)`);

@@ -166,7 +166,7 @@ export class DatabaseStorage implements IStorage {
         title: "Finance Hub",
         description: "Central finance portal for reporting, budgets, and financial operations",
         url: "https://financehub-c2bna3f0hphvgqbj.australiaeast-01.azurewebsites.net/",
-        icon: "Landmark",
+        icon: "/financehub-logo.ico",
         color: "#22C55E",
         categoryId: finance.id,
         isGlobal: true,
