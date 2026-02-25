@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { LayoutGrid, Users, Shield, Zap, ArrowRight, Rocket } from "lucide-react";
+import { LayoutGrid, Users, Shield, Zap, ArrowRight } from "lucide-react";
+import reasonLogo from "@assets/Reason_Group_Logo_CMYK_(1)_1772061462381.png";
 
 export default function LandingPage() {
   return (
@@ -9,9 +10,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 px-6 py-3">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <Rocket className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src={reasonLogo} alt="Reason Group" className="h-8 object-contain" />
             <span className="text-lg font-semibold tracking-tight">Launchpad</span>
           </div>
           <div className="flex items-center gap-2">
@@ -125,7 +124,7 @@ export default function LandingPage() {
       <footer className="py-8 px-6 border-t">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Rocket className="w-4 h-4" />
+            <img src={reasonLogo} alt="Reason Group" className="h-5 object-contain" />
             Launchpad
           </div>
           <p>&copy; {new Date().getFullYear()} All rights reserved.</p>

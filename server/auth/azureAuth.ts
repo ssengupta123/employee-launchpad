@@ -1,12 +1,26 @@
 import passport from "passport";
 import session from "express-session";
+import sql from "mssql";
 import type { Express, RequestHandler } from "express";
 import { OIDCStrategy } from "passport-azure-ad";
+import { AzureSqlSessionStore } from "./azureSqlSessionStore.js";
 
 const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID || "";
 const AZURE_AD_CLIENT_ID = process.env.AZURE_AD_CLIENT_ID || "";
 const AZURE_AD_CLIENT_SECRET = process.env.AZURE_AD_CLIENT_SECRET || "";
 const AZURE_AD_REDIRECT_URI = process.env.AZURE_AD_REDIRECT_URI || "";
+
+function getConnectionString(): string {
+  const connectionString = process.env.AZURE_SQL_CONNECTION_STRING;
+  if (connectionString) return connectionString;
+
+  const server = process.env.AZURE_SQL_SERVER || "";
+  const database = process.env.AZURE_SQL_DATABASE || "";
+  const user = process.env.AZURE_SQL_USER || "";
+  const password = process.env.AZURE_SQL_PASSWORD || "";
+  const port = process.env.AZURE_SQL_PORT || "1433";
+  return `Server=${server},${port};Database=${database};User Id=${user};Password=${password};Encrypt=true;TrustServerCertificate=false;`;
+}
 
 interface AzureUser {
   oid: string;
@@ -16,10 +30,16 @@ interface AzureUser {
   lastName: string;
 }
 
-export function setupAzureAuth(app: Express) {
+export async function setupAzureAuth(app: Express) {
   app.set("trust proxy", 1);
 
+  const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
+  const pool = await sql.connect(getConnectionString());
+  const store = new AzureSqlSessionStore(pool);
+
   app.use(session({
+    store,
     secret: process.env.SESSION_SECRET || "azure-session-secret",
     resave: false,
     saveUninitialized: false,
@@ -27,6 +47,8 @@ export function setupAzureAuth(app: Express) {
       httpOnly: true,
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: cookieDomain,
+      sameSite: cookieDomain ? "none" as const : "lax" as const,
     },
   }));
 

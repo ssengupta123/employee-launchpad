@@ -22,9 +22,12 @@ export async function registerRoutes(
 
   if (isAzure()) {
     const { setupAzureAuth, azureIsAuthenticated, registerAzureAuthRoutes } = await import("./auth/azureAuth.js");
-    setupAzureAuth(app);
+    await setupAzureAuth(app);
     registerAzureAuthRoutes(app);
     isAuthenticated = azureIsAuthenticated;
+
+    const { registerSsoHandoffRoutes } = await import("./auth/ssoHandoff.js");
+    registerSsoHandoffRoutes(app, azureIsAuthenticated);
   } else {
     const auth = await import("./replit_integrations/auth/index.js");
     await auth.setupAuth(app);

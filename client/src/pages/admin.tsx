@@ -40,7 +40,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Rocket,
   Plus,
   Pencil,
   Trash2,
@@ -51,6 +50,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
+import reasonLogo from "@assets/Reason_Group_Logo_CMYK_(1)_1772061462381.png";
 import type { Tile, Category, InsertTile, InsertCategory } from "@shared/schema";
 import { Link } from "wouter";
 
@@ -374,9 +374,7 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-            <Rocket className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src={reasonLogo} alt="Reason Group" className="h-10 object-contain" />
           <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
@@ -395,9 +393,7 @@ export default function AdminPage() {
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             </Link>
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <Rocket className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src={reasonLogo} alt="Reason Group" className="h-8 object-contain" />
             <span className="text-lg font-semibold tracking-tight">Admin Panel</span>
           </div>
           <ThemeToggle />

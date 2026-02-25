@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -17,8 +17,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Rocket, Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft, Loader2 } from "lucide-react";
+import reasonLogo from "@assets/Reason_Group_Logo_CMYK_(1)_1772061462381.png";
 import type { TileWithCategory, Category, UserTile } from "@shared/schema";
 import { Link } from "wouter";
 import { DynamicIcon } from "@/components/dynamic-icon";
@@ -29,6 +29,28 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | "all" | "pinned">("all");
   const [activeTile, setActiveTile] = useState<TileWithCategory | null>(null);
+  const [iframeUrl, setIframeUrl] = useState<string | null>(null);
+  const [loadingSsoToken, setLoadingSsoToken] = useState(false);
+
+  const openTileEmbedded = useCallback(async (tile: TileWithCategory) => {
+    setActiveTile(tile);
+    setLoadingSsoToken(true);
+    try {
+      const res = await apiRequest("POST", "/api/sso-token", { targetUrl: tile.url });
+      const data = await res.json();
+      if (data.token) {
+        const url = new URL(tile.url);
+        url.searchParams.set("sso_token", data.token);
+        setIframeUrl(url.toString());
+      } else {
+        setIframeUrl(tile.url);
+      }
+    } catch {
+      setIframeUrl(tile.url);
+    } finally {
+      setLoadingSsoToken(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -97,9 +119,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-md bg-primary flex items-center justify-center">
-            <Rocket className="w-5 h-5 text-primary-foreground" />
-          </div>
+          <img src={reasonLogo} alt="Reason Group" className="h-10 object-contain" />
           <p className="text-muted-foreground text-sm">Loading...</p>
         </div>
       </div>
@@ -124,7 +144,7 @@ export default function DashboardPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setActiveTile(null)}
+              onClick={() => { setActiveTile(null); setIframeUrl(null); }}
               data-testid="button-back-to-dashboard"
             >
               <ArrowLeft className="w-4 h-4 mr-1.5" />
@@ -147,14 +167,23 @@ export default function DashboardPage() {
           </div>
         </header>
         <div className="flex-1 relative">
-          <iframe
-            src={activeTile.url}
-            className="absolute inset-0 w-full h-full border-0"
-            title={activeTile.title}
-            allow="clipboard-read; clipboard-write; fullscreen; autoplay; camera; microphone"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-modals allow-popups-to-escape-sandbox"
-            data-testid="iframe-embedded-app"
-          />
+          {loadingSsoToken ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Connecting...</p>
+              </div>
+            </div>
+          ) : iframeUrl ? (
+            <iframe
+              src={iframeUrl}
+              className="absolute inset-0 w-full h-full border-0"
+              title={activeTile.title}
+              allow="clipboard-read; clipboard-write; fullscreen; autoplay; camera; microphone"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-modals allow-popups-to-escape-sandbox"
+              data-testid="iframe-embedded-app"
+            />
+          ) : null}
         </div>
       </div>
     );
@@ -165,9 +194,7 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 py-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-              <Rocket className="w-4 h-4 text-primary-foreground" />
-            </div>
+            <img src={reasonLogo} alt="Reason Group" className="h-8 object-contain" />
             <span className="text-lg font-semibold tracking-tight hidden sm:block">Launchpad</span>
           </div>
 
@@ -244,7 +271,7 @@ export default function DashboardPage() {
                   tile={tile}
                   pinned
                   onTogglePin={(id) => togglePinMutation.mutate(id)}
-                  onLaunch={(t) => setActiveTile(t)}
+                  onLaunch={(t) => openTileEmbedded(t)}
                 />
               ))}
             </div>
@@ -306,7 +333,7 @@ export default function DashboardPage() {
                   tile={tile}
                   pinned={pinnedTileIds.has(tile.id)}
                   onTogglePin={(id) => togglePinMutation.mutate(id)}
-                  onLaunch={(t) => setActiveTile(t)}
+                  onLaunch={(t) => openTileEmbedded(t)}
                 />
               ))}
             </div>
