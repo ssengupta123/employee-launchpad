@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft, Loader2 } from "lucide-react";
-import reasonLogo from "@assets/Reason_Group_Logo_CMYK_(1)_1772061462381.png";
+const reasonLogo = "/reason-group-logo.png";
 import type { TileWithCategory, Category, UserTile } from "@shared/schema";
 import { Link } from "wouter";
 import { DynamicIcon } from "@/components/dynamic-icon";

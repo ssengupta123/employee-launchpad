@@ -50,7 +50,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
-import reasonLogo from "@assets/Reason_Group_Logo_CMYK_(1)_1772061462381.png";
+const reasonLogo = "/reason-group-logo.png";
 import type { Tile, Category, InsertTile, InsertCategory } from "@shared/schema";
 import { Link } from "wouter";
 

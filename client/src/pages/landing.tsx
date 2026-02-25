@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LayoutGrid, Users, Shield, Zap, ArrowRight } from "lucide-react";
-import reasonLogo from "@assets/Reason_Group_Logo_CMYK_(1)_1772061462381.png";
+const reasonLogo = "/reason-group-logo.png";
 
 export default function LandingPage() {
   return (
