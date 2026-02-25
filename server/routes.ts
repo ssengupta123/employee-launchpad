@@ -1,15 +1,36 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { insertTileSchema, insertCategorySchema } from "@shared/schema";
+
+function isAzure(): boolean {
+  return !!(process.env.AZURE_SQL_CONNECTION_STRING || process.env.AZURE_SQL_SERVER);
+}
+
+function getUserId(req: any): string {
+  if (isAzure()) {
+    return req.user?.oid || "";
+  }
+  return req.user?.claims?.sub || "";
+}
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  await setupAuth(app);
-  registerAuthRoutes(app);
+  let isAuthenticated: RequestHandler;
+
+  if (isAzure()) {
+    const { setupAzureAuth, azureIsAuthenticated, registerAzureAuthRoutes } = await import("./auth/azureAuth.js");
+    setupAzureAuth(app);
+    registerAzureAuthRoutes(app);
+    isAuthenticated = azureIsAuthenticated;
+  } else {
+    const auth = await import("./replit_integrations/auth/index.js");
+    await auth.setupAuth(app);
+    auth.registerAuthRoutes(app);
+    isAuthenticated = auth.isAuthenticated;
+  }
 
   app.get("/api/tiles", isAuthenticated, async (req: any, res) => {
     try {
@@ -34,7 +55,7 @@ export async function registerRoutes(
 
   app.get("/api/user-tiles", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const ut = await storage.getUserTiles(userId);
       res.json(ut);
     } catch (error) {
@@ -45,7 +66,7 @@ export async function registerRoutes(
 
   app.post("/api/user-tiles", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const { tileId, pinned } = req.body;
       if (!tileId) return res.status(400).json({ message: "tileId is required" });
       const ut = await storage.setUserTile(userId, tileId, pinned ?? false);
@@ -58,7 +79,7 @@ export async function registerRoutes(
 
   app.delete("/api/user-tiles/:tileId", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       await storage.removeUserTile(userId, req.params.tileId);
       res.json({ success: true });
     } catch (error) {
@@ -69,7 +90,7 @@ export async function registerRoutes(
 
   app.get("/api/admin/check", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       let isAdmin = await storage.isAdmin(userId);
       if (!isAdmin) {
         const hasAnyAdmin = await storage.hasAnyAdmin();
@@ -88,7 +109,7 @@ export async function registerRoutes(
 
   const requireAdmin = async (req: any, res: any, next: any) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const isAdmin = await storage.isAdmin(userId);
       if (!isAdmin) return res.status(403).json({ message: "Forbidden" });
       next();
@@ -182,7 +203,7 @@ export async function registerRoutes(
       if (hasAnyAdmin) {
         return res.status(403).json({ message: "Admin already exists" });
       }
-      const userId = req.user.claims.sub;
+      const userId = getUserId(req);
       const admin = await storage.makeAdmin(userId);
       res.json(admin);
     } catch (error) {
