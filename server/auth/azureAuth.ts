@@ -66,7 +66,7 @@ export async function setupAzureAuth(app: Express) {
       passReqToCallback: true,
       useCookieInsteadOfSession: true,
       cookieEncryptionKeys: [
-        { key: (process.env.SESSION_SECRET || "azure-session-secret-key-32ch").padEnd(32, "0").substring(0, 32), iv: "0123456789abcdef" }
+        { key: (process.env.SESSION_SECRET || "azure-session-secret-key-32ch").padEnd(32, "0").substring(0, 32), iv: "0123456789ab" }
       ],
     },
     (req: any, profile: any, done: any) => {
