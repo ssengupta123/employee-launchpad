@@ -1,6 +1,5 @@
 import passport from "passport";
 import session from "express-session";
-import sql from "mssql";
 import type { Express, RequestHandler } from "express";
 import { OIDCStrategy } from "passport-azure-ad";
 import { AzureSqlSessionStore } from "./azureSqlSessionStore.js";
@@ -35,8 +34,7 @@ export async function setupAzureAuth(app: Express) {
 
   const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
-  const pool = await sql.connect(getConnectionString());
-  const store = new AzureSqlSessionStore(pool);
+  const store = new AzureSqlSessionStore(getConnectionString());
 
   app.use(session({
     store,
@@ -75,6 +73,7 @@ export async function setupAzureAuth(app: Express) {
         firstName: profile.name?.givenName || profile.displayName?.split(" ")[0] || "",
         lastName: profile.name?.familyName || profile.displayName?.split(" ").slice(1).join(" ") || "",
       };
+      console.log("[AzureAuth] User authenticated:", user.email);
       return done(null, user);
     }
   );
@@ -82,6 +81,7 @@ export async function setupAzureAuth(app: Express) {
   passport.use("azuread-openidconnect", strategy);
 
   passport.serializeUser((user: any, done) => {
+    console.log("[AzureAuth] Serializing user:", user.oid);
     done(null, user);
   });
 
@@ -100,7 +100,15 @@ export async function setupAzureAuth(app: Express) {
       failureRedirect: "/",
     }),
     (req, res) => {
-      res.redirect("/");
+      console.log("[AzureAuth] Callback successful, session ID:", req.sessionID);
+      req.session.save((err) => {
+        if (err) {
+          console.error("[AzureAuth] Session save error:", err);
+        } else {
+          console.log("[AzureAuth] Session saved successfully");
+        }
+        res.redirect("/");
+      });
     }
   );
 
