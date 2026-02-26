@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/use-auth";
-import LandingPage from "@/pages/landing";
 import DashboardPage from "@/pages/dashboard";
 import AdminPage from "@/pages/admin";
 import NotFound from "@/pages/not-found";
@@ -15,9 +14,14 @@ function AuthRouter() {
 
   if (isLoading) return null;
 
+  if (!user) {
+    window.location.href = "/api/login";
+    return null;
+  }
+
   return (
     <Switch>
-      <Route path="/" component={user ? DashboardPage : LandingPage} />
+      <Route path="/" component={DashboardPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

@@ -1,0 +1,39 @@
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 1731 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/public/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/public/assets/index-Bqo6M9E5.css   72.95 kB │ gzip:  11.77 kB
+../dist/public/assets/index-C4DV34SZ.js   886.91 kB │ gzip: 248.83 kB
+✓ built in 5.58s
+building server...
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+Error: R] Could not resolve "passport-azure-ad"
+
+    server/auth/azureAuth.ts:4:29:
+      4 │ import { OIDCStrategy } from "passport-azure-ad";
+        ╵                              ~~~~~~~~~~~~~~~~~~~
+
+  You can mark the path "passport-azure-ad" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle.
+
+1 error
+Error: Build failed with 1 error:
+server/auth/azureAuth.ts:4:29: ERROR: Could not resolve "passport-azure-ad"
+    at failureErrorWithLog (/home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:1467:15)
+    at /home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:926:25
+    at /home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:878:52
+    at buildResponseToResult (/home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:924:7)
+    at /home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/home/runner/work/employee-launchpad/employee-launchpad/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:519:28)
+    at addChunk (node:internal/streams/readable:561:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+Error: Process completed with exit code 1.

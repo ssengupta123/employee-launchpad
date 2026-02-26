@@ -6,6 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/auth-utils";
 import { TileCard } from "@/components/tile-card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { CopilotWidget } from "@/components/copilot-widget";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,11 +18,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft, Loader2, SlidersHorizontal, List, Grid3X3 } from "lucide-react";
 const reasonLogo = "/reason-group-logo.png";
 import type { TileWithCategory, Category, UserTile } from "@shared/schema";
 import { Link } from "wouter";
 import { DynamicIcon } from "@/components/dynamic-icon";
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading, logout } = useAuth();
@@ -31,6 +46,7 @@ export default function DashboardPage() {
   const [activeTile, setActiveTile] = useState<TileWithCategory | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [loadingSsoToken, setLoadingSsoToken] = useState(false);
+  const [sortBy, setSortBy] = useState<"name" | "category">("name");
 
   const openTileEmbedded = useCallback(async (tile: TileWithCategory) => {
     setActiveTile(tile);
@@ -102,16 +118,22 @@ export default function DashboardPage() {
 
   const pinnedTileIds = new Set(userTiles.filter((ut) => ut.pinned).map((ut) => ut.tileId));
 
-  const filteredTiles = tiles.filter((tile) => {
-    const matchesSearch =
-      !search ||
-      tile.title.toLowerCase().includes(search.toLowerCase()) ||
-      tile.description?.toLowerCase().includes(search.toLowerCase());
+  const filteredTiles = tiles
+    .filter((tile) => {
+      const matchesSearch =
+        !search ||
+        tile.title.toLowerCase().includes(search.toLowerCase()) ||
+        tile.description?.toLowerCase().includes(search.toLowerCase());
 
-    if (activeCategory === "pinned") return matchesSearch && pinnedTileIds.has(tile.id);
-    if (activeCategory === "all") return matchesSearch;
-    return matchesSearch && tile.categoryId === activeCategory;
-  });
+      if (activeCategory === "pinned") return matchesSearch && pinnedTileIds.has(tile.id);
+      if (activeCategory === "all") return matchesSearch;
+      return matchesSearch && tile.categoryId === activeCategory;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") return a.title.localeCompare(b.title);
+      if (sortBy === "category") return (a.category?.name || "").localeCompare(b.category?.name || "");
+      return 0;
+    });
 
   const pinnedTiles = tiles.filter((t) => pinnedTileIds.has(t.id));
 
@@ -139,18 +161,19 @@ export default function DashboardPage() {
   if (activeTile) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        <header className="shrink-0 border-b bg-background/80 backdrop-blur-md z-50">
+        <header className="shrink-0 border-b bg-[#0a1628] z-50">
           <div className="flex items-center gap-3 px-4 py-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => { setActiveTile(null); setIframeUrl(null); }}
+              className="text-white/70 hover:text-white hover:bg-white/10"
               data-testid="button-back-to-dashboard"
             >
               <ArrowLeft className="w-4 h-4 mr-1.5" />
               Back
             </Button>
-            <div className="h-5 w-px bg-border" />
+            <div className="h-5 w-px bg-white/10" />
             {activeTile.icon.startsWith("/") || activeTile.icon.startsWith("http") ? (
               <div className="w-7 h-7 rounded-md shrink-0 overflow-hidden">
                 <img src={activeTile.icon} alt={activeTile.title} className="w-full h-full object-cover" />
@@ -158,12 +181,12 @@ export default function DashboardPage() {
             ) : (
               <div
                 className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
-                style={{ backgroundColor: activeTile.color + "18", color: activeTile.color }}
+                style={{ backgroundColor: activeTile.color + "30", color: activeTile.color }}
               >
                 <DynamicIcon name={activeTile.icon} className="w-3.5 h-3.5" />
               </div>
             )}
-            <span className="font-medium text-sm truncate" data-testid="text-embedded-app-title">{activeTile.title}</span>
+            <span className="font-medium text-sm truncate text-white" data-testid="text-embedded-app-title">{activeTile.title}</span>
           </div>
         </header>
         <div className="flex-1 relative">
@@ -190,43 +213,31 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+    <div className="min-h-screen bg-muted/30 dark:bg-background flex flex-col">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 px-6 py-3">
           <div className="flex items-center gap-3">
-            <img src={reasonLogo} alt="Reason Group" className="h-8 object-contain" />
-            <span className="text-lg font-semibold tracking-tight hidden sm:block">Launchpad</span>
-          </div>
-
-          <div className="flex-1 max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search apps..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-                data-testid="input-search"
-              />
-            </div>
+            <img src={reasonLogo} alt="Reason Group" className="h-8 object-contain" data-testid="img-dashboard-logo" />
+            <div className="hidden sm:block h-6 w-px bg-border" />
+            <span className="text-sm font-semibold tracking-wide text-muted-foreground hidden sm:block">Launchpad</span>
           </div>
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2" data-testid="button-user-menu">
-                  <Avatar className="w-7 h-7">
+                <Button variant="ghost" className="flex items-center gap-2.5 px-2" data-testid="button-user-menu">
+                  <Avatar className="w-8 h-8 border">
                     <AvatarImage src={user.profileImageUrl || undefined} />
-                    <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                    <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials}</AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium hidden sm:block">{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium" data-testid="text-user-name">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-3 py-2.5">
+                  <p className="text-sm font-semibold" data-testid="text-user-name">{displayName}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator />
                 {isAdmin?.isAdmin && (
@@ -250,83 +261,122 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold" data-testid="text-welcome">
-            Welcome back, {user.firstName || "there"}
+      <div className="border-b bg-background">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <h1 className="text-3xl font-bold tracking-tight" data-testid="text-welcome">
+            {getGreeting()}, {user.firstName || "there"}
           </h1>
-          <p className="text-muted-foreground mt-1">Access your applications and tools below.</p>
+          <p className="text-muted-foreground mt-2 text-base">
+            Your one-stop shop for productivity apps, workflows, and tools.
+          </p>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 max-w-lg">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search apps, tools, and workflows..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 h-11 text-base"
+                data-testid="input-search"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as "name" | "category")}>
+                <SelectTrigger className="w-[140px] h-11" data-testid="select-sort">
+                  <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
+      </div>
 
-        {pinnedTiles.length > 0 && activeCategory !== "pinned" && (
-          <section className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
-              <Pin className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold">Pinned Apps</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {pinnedTiles.map((tile) => (
-                <TileCard
-                  key={tile.id}
-                  tile={tile}
-                  pinned
-                  onTogglePin={(id) => togglePinMutation.mutate(id)}
-                  onLaunch={(t) => openTileEmbedded(t)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section>
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+      <main className="max-w-7xl mx-auto px-6 py-8 flex-1 w-full">
+        <div className="flex flex-wrap items-center gap-2 mb-8">
+          <Button
+            variant={activeCategory === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveCategory("all")}
+            className="rounded-full"
+            data-testid="button-category-all"
+          >
+            <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />
+            All Apps
+            <span className="ml-1.5 text-xs opacity-60">{tiles.length}</span>
+          </Button>
+          {pinnedTiles.length > 0 && (
             <Button
-              variant={activeCategory === "all" ? "default" : "secondary"}
-              size="sm"
-              onClick={() => setActiveCategory("all")}
-              data-testid="button-category-all"
-            >
-              <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />
-              All Apps
-            </Button>
-            <Button
-              variant={activeCategory === "pinned" ? "default" : "secondary"}
+              variant={activeCategory === "pinned" ? "default" : "outline"}
               size="sm"
               onClick={() => setActiveCategory("pinned")}
+              className="rounded-full"
               data-testid="button-category-pinned"
             >
               <Pin className="w-3.5 h-3.5 mr-1.5" />
               Pinned
+              <span className="ml-1.5 text-xs opacity-60">{pinnedTiles.length}</span>
             </Button>
-            {categories.map((cat) => (
+          )}
+          {categories.map((cat) => {
+            const count = tiles.filter(t => t.categoryId === cat.id).length;
+            return (
               <Button
                 key={cat.id}
-                variant={activeCategory === cat.id ? "default" : "secondary"}
+                variant={activeCategory === cat.id ? "default" : "outline"}
                 size="sm"
                 onClick={() => setActiveCategory(cat.id)}
+                className="rounded-full"
                 data-testid={`button-category-${cat.id}`}
               >
                 {cat.name}
+                <span className="ml-1.5 text-xs opacity-60">{count}</span>
               </Button>
+            );
+          })}
+        </div>
+
+        {tilesLoading || userTilesLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-72 rounded-xl" />
             ))}
           </div>
-
-          {tilesLoading || userTilesLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-24 rounded-lg" />
-              ))}
+        ) : filteredTiles.length === 0 ? (
+          <div className="text-center py-24">
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <Search className="w-9 h-9 text-primary/40" />
             </div>
-          ) : filteredTiles.length === 0 ? (
-            <div className="text-center py-16">
-              <LayoutGrid className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <h3 className="font-semibold text-lg">No apps found</h3>
-              <p className="text-muted-foreground text-sm mt-1">
-                {search ? "Try adjusting your search." : "No apps have been assigned to you yet."}
+            <h3 className="font-semibold text-xl">No apps found</h3>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+              {search
+                ? `No results for "${search}". Try a different search term.`
+                : "No applications have been added yet. Contact your administrator to get started."}
+            </p>
+            {search && (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => setSearch("")}
+                data-testid="button-clear-search"
+              >
+                Clear search
+              </Button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-muted-foreground" data-testid="text-results-count">
+                {filteredTiles.length} {filteredTiles.length === 1 ? "app" : "apps"} available
               </p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTiles.map((tile) => (
                 <TileCard
                   key={tile.id}
@@ -337,9 +387,21 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-          )}
-        </section>
+          </>
+        )}
       </main>
+
+      <footer className="border-t bg-background mt-auto">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <img src={reasonLogo} alt="Reason Group" className="h-4 object-contain opacity-40" data-testid="img-footer-logo" />
+            <span>Launchpad</span>
+          </div>
+          <span>&copy; {new Date().getFullYear()} Reason Group</span>
+        </div>
+      </footer>
+
+      <CopilotWidget />
     </div>
   );
 }
