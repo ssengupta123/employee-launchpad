@@ -39,8 +39,8 @@ export async function setupAzureAuth(app: Express) {
   app.use(session({
     store,
     secret: process.env.SESSION_SECRET || "azure-session-secret",
-    resave: false,
-    saveUninitialized: false,
+    resave: true,
+    saveUninitialized: true,
     cookie: {
       httpOnly: true,
       secure: true,
@@ -63,9 +63,13 @@ export async function setupAzureAuth(app: Express) {
       redirectUrl: AZURE_AD_REDIRECT_URI,
       allowHttpForRedirectUrl: false,
       scope: ["openid", "profile", "email"],
-      passReqToCallback: false,
+      passReqToCallback: true,
+      useCookieInsteadOfSession: true,
+      cookieEncryptionKeys: [
+        { key: (process.env.SESSION_SECRET || "azure-session-secret-key-32ch").padEnd(32, "0").substring(0, 32), iv: "0123456789abcdef" }
+      ],
     },
-    (profile: any, done: any) => {
+    (req: any, profile: any, done: any) => {
       const user: AzureUser = {
         oid: profile.oid,
         email: profile._json?.email || profile.upn || profile._json?.preferred_username || "",
@@ -73,7 +77,7 @@ export async function setupAzureAuth(app: Express) {
         firstName: profile.name?.givenName || profile.displayName?.split(" ")[0] || "",
         lastName: profile.name?.familyName || profile.displayName?.split(" ").slice(1).join(" ") || "",
       };
-      console.log("[AzureAuth] User authenticated:", user.email);
+      console.log("[AzureAuth] User authenticated:", user.email, "OID:", user.oid);
       return done(null, user);
     }
   );
@@ -95,22 +99,33 @@ export async function setupAzureAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.post("/api/callback",
-    passport.authenticate("azuread-openidconnect", {
-      failureRedirect: "/",
-    }),
-    (req, res) => {
-      console.log("[AzureAuth] Callback successful, session ID:", req.sessionID);
-      req.session.save((err) => {
-        if (err) {
-          console.error("[AzureAuth] Session save error:", err);
-        } else {
-          console.log("[AzureAuth] Session saved successfully");
+  app.post("/api/callback", (req, res, next) => {
+    passport.authenticate("azuread-openidconnect", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error("[AzureAuth] Callback error:", err);
+        return res.redirect("/?error=auth_error");
+      }
+      if (!user) {
+        console.error("[AzureAuth] Callback failed - no user. Info:", JSON.stringify(info));
+        return res.redirect("/?error=auth_failed");
+      }
+      req.logIn(user, (loginErr: any) => {
+        if (loginErr) {
+          console.error("[AzureAuth] Login error:", loginErr);
+          return res.redirect("/?error=login_error");
         }
-        res.redirect("/");
+        console.log("[AzureAuth] Login successful, session ID:", req.sessionID);
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error("[AzureAuth] Session save error:", saveErr);
+          } else {
+            console.log("[AzureAuth] Session saved successfully");
+          }
+          res.redirect("/");
+        });
       });
-    }
-  );
+    })(req, res, next);
+  });
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
