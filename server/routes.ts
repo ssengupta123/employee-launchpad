@@ -222,6 +222,14 @@ export async function registerRoutes(
     }
     await storage.seedData();
     console.log("Seed data loaded");
+
+    const allTiles = await storage.getTiles();
+    for (const tile of allTiles) {
+      if (tile.title === "Finance Hub" && tile.imageUrl !== "/finance-hub-banner.png") {
+        await storage.updateTile(tile.id, { imageUrl: "/finance-hub-banner.png" });
+        console.log("Updated Finance Hub banner image");
+      }
+    }
   } catch (error) {
     console.error("Error seeding data:", error);
   }
