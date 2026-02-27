@@ -39,7 +39,7 @@ export function TileCard({ tile, pinned, onTogglePin, onLaunch, showPinButton = 
       onClick={handleClick}
       data-testid={`tile-card-${tile.id}`}
     >
-      <div className="relative h-36 overflow-hidden">
+      <div className="relative h-44 overflow-hidden">
         {tile.imageUrl ? (
           <img
             src={tile.imageUrl}
