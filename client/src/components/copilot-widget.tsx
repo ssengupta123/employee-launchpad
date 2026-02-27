@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { X, MessageCircle } from "lucide-react";
 
 const COPILOT_BOT_URL =
-  "https://copilotstudio.microsoft.com/environments/Default-1d2442c2-bedd-4c24-957c-cb3e90333ab3/bots/1b160d30-4235-f011-8c4d-00224810d843/webchat?__version__=2";
+  "https://copilotstudio.microsoft.com/environments/Default-1d2442c2-bedd-4c24-957c-cb3e90333ab3/bots/cr8c8_reasonAgent/canvas?__version__=2&enableFileAttachment=true";
 
 export function CopilotWidget() {
   const [open, setOpen] = useState(false);
