@@ -1,5 +1,5 @@
 import type { Express, RequestHandler } from "express";
-import { createServer, type Server } from "http";
+import type { Server } from "node:http";
 import { storage } from "./storage";
 import { insertTileSchema, insertCategorySchema } from "@shared/schema";
 
@@ -34,6 +34,33 @@ export async function registerRoutes(
     auth.registerAuthRoutes(app);
     isAuthenticated = auth.isAuthenticated;
   }
+
+  app.get("/api/copilot/token", isAuthenticated, async (req: any, res) => {
+    try {
+      const secret = process.env.COPILOT_DIRECT_LINE_SECRET;
+      if (!secret) {
+        return res.status(503).json({ message: "Copilot not configured" });
+      }
+      const userId = getUserId(req);
+      const tokenRes = await fetch("https://australia.directline.botframework.com/v3/directline/tokens/generate", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${secret}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user: { id: `user_${userId}` } }),
+      });
+      if (!tokenRes.ok) {
+        console.error("Copilot token error:", tokenRes.status, await tokenRes.text());
+        return res.status(502).json({ message: "Failed to get bot token" });
+      }
+      const data = await tokenRes.json();
+      res.json({ token: data.token, conversationId: data.conversationId });
+    } catch (err) {
+      console.error("Copilot token error:", err);
+      res.status(500).json({ message: "Failed to generate token" });
+    }
+  });
 
   app.get("/api/tiles", isAuthenticated, async (req: any, res) => {
     try {

@@ -15,7 +15,7 @@ function AuthRouter() {
   if (isLoading) return null;
 
   if (!user) {
-    window.location.href = "/api/login";
+    globalThis.location.href = "/api/login";
     return null;
   }
 

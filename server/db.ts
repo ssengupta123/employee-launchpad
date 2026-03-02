@@ -8,17 +8,18 @@ function isAzureSql(): boolean {
   return !!(process.env.AZURE_SQL_CONNECTION_STRING || process.env.AZURE_SQL_SERVER);
 }
 
-let pool: InstanceType<typeof Pool> | undefined;
-let db: ReturnType<typeof drizzle> | undefined;
-
-if (!isAzureSql()) {
+const { pool, db } = (() => {
+  if (isAzureSql()) {
+    return { pool: undefined, db: undefined };
+  }
   if (!process.env.DATABASE_URL) {
     throw new Error(
       "DATABASE_URL must be set. Did you forget to provision a database?",
     );
   }
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzle(pool, { schema });
-}
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const db = drizzle(pool, { schema });
+  return { pool, db };
+})();
 
 export { pool, db };

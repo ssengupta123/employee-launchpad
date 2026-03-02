@@ -29,6 +29,17 @@ interface AzureUser {
   lastName: string;
 }
 
+function handleSessionSave(req: any, res: any) {
+  req.session.save((saveErr: any) => {
+    if (saveErr) {
+      console.error("[AzureAuth] Session save error:", saveErr);
+    } else {
+      console.log("[AzureAuth] Session saved successfully");
+    }
+    res.redirect("/");
+  });
+}
+
 export async function setupAzureAuth(app: Express) {
   app.set("trust proxy", 1);
 
@@ -115,14 +126,7 @@ export async function setupAzureAuth(app: Express) {
           return res.redirect("/?error=login_error");
         }
         console.log("[AzureAuth] Login successful, session ID:", req.sessionID);
-        req.session.save((saveErr: any) => {
-          if (saveErr) {
-            console.error("[AzureAuth] Session save error:", saveErr);
-          } else {
-            console.log("[AzureAuth] Session saved successfully");
-          }
-          res.redirect("/");
-        });
+        handleSessionSave(req, res);
       });
     })(req, res, next);
   });

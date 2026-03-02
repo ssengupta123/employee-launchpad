@@ -2,8 +2,8 @@ import session from "express-session";
 import sql from "mssql";
 
 export class AzureSqlSessionStore extends session.Store {
-  private pool: sql.ConnectionPool;
-  private ready: Promise<void>;
+  private readonly pool: sql.ConnectionPool;
+  private readonly ready: Promise<void>;
   private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(connectionString: string) {

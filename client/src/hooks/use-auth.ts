@@ -18,7 +18,7 @@ async function fetchUser(): Promise<User | null> {
 }
 
 async function logout(): Promise<void> {
-  window.location.href = "/api/logout";
+  globalThis.location.href = "/api/logout";
 }
 
 export function useAuth() {

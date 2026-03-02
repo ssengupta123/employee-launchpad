@@ -47,11 +47,10 @@ import {
   LayoutGrid,
   FolderOpen,
   Globe,
-  ExternalLink,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 const reasonLogo = "/reason-group-logo.png";
-import type { Tile, Category, InsertTile, InsertCategory } from "@shared/schema";
+import type { Tile, Category } from "@shared/schema";
 import { Link } from "wouter";
 
 const ICON_OPTIONS = [
@@ -273,13 +272,13 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      window.location.href = "/api/login";
+      globalThis.location.href = "/api/login";
     }
   }, [authLoading, user]);
 
   useEffect(() => {
     if (!adminLoading && isAdmin && !isAdmin.isAdmin) {
-      window.location.href = "/";
+      globalThis.location.href = "/";
     }
   }, [adminLoading, isAdmin]);
 
@@ -295,7 +294,7 @@ export default function AdminPage() {
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
         toast({ title: "Unauthorized", description: "Logging in again...", variant: "destructive" });
-        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+        setTimeout(() => { globalThis.location.href = "/api/login"; }, 500);
         return;
       }
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -314,7 +313,7 @@ export default function AdminPage() {
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
         toast({ title: "Unauthorized", description: "Logging in again...", variant: "destructive" });
-        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+        setTimeout(() => { globalThis.location.href = "/api/login"; }, 500);
         return;
       }
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -450,7 +449,7 @@ export default function AdminPage() {
             {tilesLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 rounded-lg" />
+                  <Skeleton key={`tile-skeleton-${i}`} className="h-16 rounded-lg" />
                 ))}
               </div>
             ) : tiles.length === 0 ? (
@@ -545,7 +544,7 @@ export default function AdminPage() {
             {categoriesLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-14 rounded-lg" />
+                  <Skeleton key={`cat-skeleton-${i}`} className="h-14 rounded-lg" />
                 ))}
               </div>
             ) : categories.length === 0 ? (

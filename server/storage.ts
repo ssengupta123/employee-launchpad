@@ -1,7 +1,7 @@
 import {
   type Category, type InsertCategory,
   type Tile, type InsertTile, type TileWithCategory,
-  type UserTile, type InsertUserTile,
+  type UserTile,
   type AdminUser,
   categories, tiles, userTiles, adminUsers,
 } from "@shared/schema";

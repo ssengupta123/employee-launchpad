@@ -1,6 +1,6 @@
 import * as LucideIcons from "lucide-react";
 
-export function DynamicIcon({ name, className }: { name: string; className?: string }) {
+export function DynamicIcon({ name, className }: Readonly<{ name: string; className?: string }>) {
   if (name.startsWith("/") || name.startsWith("http://") || name.startsWith("https://")) {
     return <img src={name} alt="" className={className} style={{ objectFit: "contain" }} />;
   }

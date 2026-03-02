@@ -8,12 +8,13 @@ async function getAccessToken() {
     return connectionSettings.settings.access_token;
   }
   
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  let xReplitToken: string | null = null;
+  if (process.env.REPL_IDENTITY) {
+    xReplitToken = 'repl ' + process.env.REPL_IDENTITY;
+  } else if (process.env.WEB_REPL_RENEWAL) {
+    xReplitToken = 'depl ' + process.env.WEB_REPL_RENEWAL;
+  }
 
   if (!xReplitToken) {
     throw new Error('X_REPLIT_TOKEN not found for repl/depl');
@@ -29,7 +30,7 @@ async function getAccessToken() {
     }
   ).then(res => res.json()).then(data => data.items?.[0]);
 
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
+  const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
 
   if (!connectionSettings || !accessToken) {
     throw new Error('GitHub not connected');

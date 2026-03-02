@@ -28,9 +28,10 @@ export function CopilotWidget() {
             </Button>
           </div>
           <iframe
-            src="/copilot-chat.html"
+            src="https://copilotstudio.microsoft.com/environments/Default-1d2442c2-bedd-4c24-957c-cb3e90333ab3/bots/cr8c8_reasonGroupQa/webchat?__version__=2"
             className="flex-1 w-full border-0"
             title="Reason Agent"
+            allow="microphone *"
             data-testid="iframe-copilot"
           />
         </div>

@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft, Loader2, SlidersHorizontal, List, Grid3X3 } from "lucide-react";
+import { Search, LogOut, Settings, Pin, LayoutGrid, ArrowLeft, Loader2, SlidersHorizontal } from "lucide-react";
 const reasonLogo = "/reason-group-logo.png";
 import type { TileWithCategory, Category, UserTile } from "@shared/schema";
 import { Link } from "wouter";
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const { user, isLoading: authLoading, logout } = useAuth();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | "all" | "pinned">("all");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeTile, setActiveTile] = useState<TileWithCategory | null>(null);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [loadingSsoToken, setLoadingSsoToken] = useState(false);
@@ -70,7 +70,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      window.location.href = "/api/login";
+      globalThis.location.href = "/api/login";
     }
   }, [authLoading, user]);
 
@@ -109,7 +109,7 @@ export default function DashboardPage() {
     onError: (error: Error) => {
       if (isUnauthorizedError(error)) {
         toast({ title: "Unauthorized", description: "Logging in again...", variant: "destructive" });
-        setTimeout(() => { window.location.href = "/api/login"; }, 500);
+        setTimeout(() => { globalThis.location.href = "/api/login"; }, 500);
         return;
       }
       toast({ title: "Error", description: "Failed to update pin", variant: "destructive" });
@@ -344,7 +344,7 @@ export default function DashboardPage() {
         {tilesLoading || userTilesLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-72 rounded-xl" />
+              <Skeleton key={`skeleton-${i}`} className="h-72 rounded-xl" />
             ))}
           </div>
         ) : filteredTiles.length === 0 ? (

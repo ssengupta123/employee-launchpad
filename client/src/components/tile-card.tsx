@@ -15,11 +15,11 @@ function getIcon(iconName: string) {
 }
 
 interface TileCardProps {
-  tile: TileWithCategory;
-  pinned?: boolean;
-  onTogglePin?: (tileId: string) => void;
-  onLaunch?: (tile: TileWithCategory) => void;
-  showPinButton?: boolean;
+  readonly tile: TileWithCategory;
+  readonly pinned?: boolean;
+  readonly onTogglePin?: (tileId: string) => void;
+  readonly onLaunch?: (tile: TileWithCategory) => void;
+  readonly showPinButton?: boolean;
 }
 
 export function TileCard({ tile, pinned, onTogglePin, onLaunch, showPinButton = true }: TileCardProps) {

@@ -16,7 +16,7 @@ const PREVIEW_APPS = [
   { name: "Viva", color: "#0E7A0D", icon: "V", delay: 800 },
 ];
 
-function AnimatedTile({ app, index }: { app: typeof PREVIEW_APPS[0]; index: number }) {
+function AnimatedTile({ app, index }: Readonly<{ app: typeof PREVIEW_APPS[0]; index: number }>) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -194,7 +194,7 @@ export default function LandingPage() {
                 desc: "Microsoft Entra ID single sign-on, admin-managed tiles, and seamless authentication across all embedded applications.",
               },
             ].map((feature) => (
-              <div key={feature.title} className="group relative p-8 rounded-2xl border bg-card hover:border-primary/20 transition-colors duration-300" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s/g, "-")}`}>
+              <div key={feature.title} className="group relative p-8 rounded-2xl border bg-card hover:border-primary/20 transition-colors duration-300" data-testid={`card-feature-${feature.title.toLowerCase().replaceAll(/\s/g, "-")}`}>
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-5 group-hover:bg-primary/15 transition-colors">
                   <feature.icon className="w-6 h-6 text-primary" />
                 </div>
