@@ -411,11 +411,11 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {tilesLoading || userTilesLoading ? (
-          <TilesLoadingSkeleton />
-        ) : filteredTiles.length === 0 ? (
+        {(tilesLoading || userTilesLoading) && <TilesLoadingSkeleton />}
+        {!(tilesLoading || userTilesLoading) && filteredTiles.length === 0 && (
           <EmptyTilesState search={search} onClearSearch={() => setSearch("")} />
-        ) : (
+        )}
+        {!(tilesLoading || userTilesLoading) && filteredTiles.length > 0 && (
           <TilesGrid
             tiles={filteredTiles}
             pinnedTileIds={pinnedTileIds}
