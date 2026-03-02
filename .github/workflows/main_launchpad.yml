@@ -15,10 +15,16 @@
         - uses: actions/checkout@v4
           with:
             fetch-depth: 0
+        - name: Install SonarScanner
+          run: |
+            export SONAR_SCANNER_VERSION=6.2.1.4610
+            curl -sSLo sonar-scanner.zip "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux-x64.zip"
+            unzip -q sonar-scanner.zip
+            echo "${PWD}/sonar-scanner-${SONAR_SCANNER_VERSION}-linux-x64/bin" >> $GITHUB_PATH
         - name: SonarCloud Scan
-          uses: SonarSource/sonarcloud-github-action@v4
+          run: sonar-scanner -Dsonar.token=${{ secrets.SONAR_TOKEN }}
           env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            SONAR_HOST_URL: https://sonarcloud.io
 
     build:
       runs-on: ubuntu-latest
