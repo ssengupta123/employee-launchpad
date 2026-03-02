@@ -241,9 +241,9 @@ export class AzureSqlStorage implements IStorage {
       .input("icon", sql.NVarChar, data.icon || "Globe")
       .input("color", sql.NVarChar, data.color || "#3B82F6")
       .input("categoryId", sql.NVarChar, data.categoryId || null)
-      .input("isGlobal", sql.Bit, data.isGlobal !== false ? 1 : 0)
+      .input("isGlobal", sql.Bit, data.isGlobal === false ? 0 : 1)
       .input("sortOrder", sql.Int, data.sortOrder || 0)
-      .input("openInNewTab", sql.Bit, data.openInNewTab !== false ? 1 : 0)
+      .input("openInNewTab", sql.Bit, data.openInNewTab === false ? 0 : 1)
       .input("imageUrl", sql.NVarChar, data.imageUrl || null)
       .query(`INSERT INTO tiles (id, title, description, url, icon, color, category_id, is_global, sort_order, open_in_new_tab, image_url) VALUES (@id, @title, @description, @url, @icon, @color, @categoryId, @isGlobal, @sortOrder, @openInNewTab, @imageUrl)`);
     return (await this.getTileById(id))!;

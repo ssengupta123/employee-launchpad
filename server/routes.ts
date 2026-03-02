@@ -144,6 +144,7 @@ export async function registerRoutes(
       if (!isAdmin) return res.status(403).json({ message: "Forbidden" });
       next();
     } catch (error) {
+      console.error("Error verifying admin:", error);
       res.status(500).json({ message: "Failed to verify admin" });
     }
   };
@@ -153,6 +154,7 @@ export async function registerRoutes(
       const allTiles = await storage.getTiles();
       res.json(allTiles);
     } catch (error) {
+      console.error("Error fetching admin tiles:", error);
       res.status(500).json({ message: "Failed to fetch tiles" });
     }
   });

@@ -53,6 +53,14 @@ const reasonLogo = "/reason-group-logo.png";
 import type { Tile, Category } from "@shared/schema";
 import { Link } from "wouter";
 
+const TILE_SKELETON_IDS = ["ts-1", "ts-2", "ts-3", "ts-4"];
+const CAT_SKELETON_IDS = ["cs-1", "cs-2", "cs-3"];
+
+function getSubmitLabel(isPending: boolean, isEditing: boolean): string {
+  if (isPending) return "Saving...";
+  return isEditing ? "Update" : "Create";
+}
+
 const ICON_OPTIONS = [
   "Globe", "LayoutGrid", "Mail", "Calendar", "Users", "FileText",
   "BarChart3", "Settings", "Database", "Shield", "Briefcase",
@@ -73,13 +81,13 @@ function TileForm({
   onSubmit,
   isPending,
   onClose,
-}: {
+}: Readonly<{
   tile?: Tile | null;
   categories: Category[];
   onSubmit: (data: any) => void;
   isPending: boolean;
   onClose: () => void;
-}) {
+}>) {
   const [title, setTitle] = useState(tile?.title || "");
   const [description, setDescription] = useState(tile?.description || "");
   const [url, setUrl] = useState(tile?.url || "");
@@ -174,7 +182,7 @@ function TileForm({
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={isPending} data-testid="button-tile-submit">
-          {isPending ? "Saving..." : tile ? "Update" : "Create"}
+          {getSubmitLabel(isPending, !!tile)}
         </Button>
       </div>
     </form>
@@ -186,12 +194,12 @@ function CategoryForm({
   onSubmit,
   isPending,
   onClose,
-}: {
+}: Readonly<{
   category?: Category | null;
   onSubmit: (data: any) => void;
   isPending: boolean;
   onClose: () => void;
-}) {
+}>) {
   const [name, setName] = useState(category?.name || "");
   const [description, setDescription] = useState(category?.description || "");
   const [icon, setIcon] = useState(category?.icon || "Folder");
@@ -240,7 +248,7 @@ function CategoryForm({
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
         <Button type="submit" disabled={isPending} data-testid="button-category-submit">
-          {isPending ? "Saving..." : category ? "Update" : "Create"}
+          {getSubmitLabel(isPending, !!category)}
         </Button>
       </div>
     </form>
@@ -446,19 +454,21 @@ export default function AdminPage() {
               </Dialog>
             </div>
 
-            {tilesLoading ? (
+            {tilesLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={`tile-skeleton-${i}`} className="h-16 rounded-lg" />
+                {TILE_SKELETON_IDS.map((id) => (
+                  <Skeleton key={id} className="h-16 rounded-lg" />
                 ))}
               </div>
-            ) : tiles.length === 0 ? (
+            )}
+            {!tilesLoading && tiles.length === 0 && (
               <Card className="p-12 text-center bg-background">
                 <Globe className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <h3 className="font-semibold text-lg">No tiles yet</h3>
                 <p className="text-sm text-muted-foreground mt-1">Add your first application tile to get started.</p>
               </Card>
-            ) : (
+            )}
+            {!tilesLoading && tiles.length > 0 && (
               <div className="space-y-2">
                 {tiles.map((tile) => (
                   <Card key={tile.id} className="p-4 flex items-center justify-between gap-4 bg-background" data-testid={`admin-tile-${tile.id}`}>
@@ -541,19 +551,21 @@ export default function AdminPage() {
               </Dialog>
             </div>
 
-            {categoriesLoading ? (
+            {categoriesLoading && (
               <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={`cat-skeleton-${i}`} className="h-14 rounded-lg" />
+                {CAT_SKELETON_IDS.map((id) => (
+                  <Skeleton key={id} className="h-14 rounded-lg" />
                 ))}
               </div>
-            ) : categories.length === 0 ? (
+            )}
+            {!categoriesLoading && categories.length === 0 && (
               <Card className="p-12 text-center bg-background">
                 <FolderOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <h3 className="font-semibold text-lg">No categories yet</h3>
                 <p className="text-sm text-muted-foreground mt-1">Create categories to organise your app tiles.</p>
               </Card>
-            ) : (
+            )}
+            {!categoriesLoading && categories.length > 0 && (
               <div className="space-y-2">
                 {categories.map((cat) => (
                   <Card key={cat.id} className="p-4 flex items-center justify-between gap-4 bg-background" data-testid={`admin-category-${cat.id}`}>

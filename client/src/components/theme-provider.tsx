@@ -14,7 +14,7 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export function ThemeProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof globalThis.window !== "undefined") {
+    if (globalThis.window !== undefined) {
       return (localStorage.getItem("theme") as Theme) || "light";
     }
     return "light";

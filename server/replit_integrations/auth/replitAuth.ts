@@ -156,7 +156,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     return next();
   }
 
-  const user = req.user as any;
+  const user: Record<string, any> = (req.user ?? {}) as Record<string, any>;
 
   if (!req.isAuthenticated() || !user.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });

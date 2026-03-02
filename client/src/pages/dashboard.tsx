@@ -31,6 +31,92 @@ import type { TileWithCategory, Category, UserTile } from "@shared/schema";
 import { Link } from "wouter";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
+const SKELETON_IDS = ["sk-1", "sk-2", "sk-3", "sk-4", "sk-5", "sk-6"];
+
+function TilesLoadingSkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {SKELETON_IDS.map((id) => (
+        <Skeleton key={id} className="h-72 rounded-xl" />
+      ))}
+    </div>
+  );
+}
+
+function EmptyTilesState({ search, onClearSearch }: Readonly<{ search: string; onClearSearch: () => void }>) {
+  const message = search
+    ? `No results for "${search}". Try a different search term.`
+    : "No applications have been added yet. Contact your administrator to get started.";
+  return (
+    <div className="text-center py-24">
+      <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+        <Search className="w-9 h-9 text-primary/40" />
+      </div>
+      <h3 className="font-semibold text-xl">No apps found</h3>
+      <p className="text-muted-foreground mt-2 max-w-md mx-auto">{message}</p>
+      {search && (
+        <Button variant="outline" className="mt-4" onClick={onClearSearch} data-testid="button-clear-search">
+          Clear search
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function TilesGrid({ tiles, pinnedTileIds, onTogglePin, onLaunch }: Readonly<{
+  tiles: TileWithCategory[];
+  pinnedTileIds: Set<string>;
+  onTogglePin: (id: string) => void;
+  onLaunch: (tile: TileWithCategory) => void;
+}>) {
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground" data-testid="text-results-count">
+          {tiles.length} {tiles.length === 1 ? "app" : "apps"} available
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tiles.map((tile) => (
+          <TileCard
+            key={tile.id}
+            tile={tile}
+            pinned={pinnedTileIds.has(tile.id)}
+            onTogglePin={onTogglePin}
+            onLaunch={onLaunch}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function EmbeddedContent({ loading, iframeUrl, title }: Readonly<{ loading: boolean; iframeUrl: string | null; title: string }>) {
+  if (loading) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Connecting...</p>
+        </div>
+      </div>
+    );
+  }
+  if (iframeUrl) {
+    return (
+      <iframe
+        src={iframeUrl}
+        className="absolute inset-0 w-full h-full border-0"
+        title={title}
+        allow="clipboard-read; clipboard-write; fullscreen; autoplay; camera; microphone"
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-modals allow-popups-to-escape-sandbox"
+        data-testid="iframe-embedded-app"
+      />
+    );
+  }
+  return null;
+}
+
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "Good morning";
@@ -190,23 +276,7 @@ export default function DashboardPage() {
           </div>
         </header>
         <div className="flex-1 relative">
-          {loadingSsoToken ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-background">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Connecting...</p>
-              </div>
-            </div>
-          ) : iframeUrl ? (
-            <iframe
-              src={iframeUrl}
-              className="absolute inset-0 w-full h-full border-0"
-              title={activeTile.title}
-              allow="clipboard-read; clipboard-write; fullscreen; autoplay; camera; microphone"
-              sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-downloads allow-modals allow-popups-to-escape-sandbox"
-              data-testid="iframe-embedded-app"
-            />
-          ) : null}
+          <EmbeddedContent loading={loadingSsoToken} iframeUrl={iframeUrl} title={activeTile.title} />
         </div>
       </div>
     );
@@ -342,52 +412,16 @@ export default function DashboardPage() {
         </div>
 
         {tilesLoading || userTilesLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={`skeleton-${i}`} className="h-72 rounded-xl" />
-            ))}
-          </div>
+          <TilesLoadingSkeleton />
         ) : filteredTiles.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
-              <Search className="w-9 h-9 text-primary/40" />
-            </div>
-            <h3 className="font-semibold text-xl">No apps found</h3>
-            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-              {search
-                ? `No results for "${search}". Try a different search term.`
-                : "No applications have been added yet. Contact your administrator to get started."}
-            </p>
-            {search && (
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => setSearch("")}
-                data-testid="button-clear-search"
-              >
-                Clear search
-              </Button>
-            )}
-          </div>
+          <EmptyTilesState search={search} onClearSearch={() => setSearch("")} />
         ) : (
-          <>
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground" data-testid="text-results-count">
-                {filteredTiles.length} {filteredTiles.length === 1 ? "app" : "apps"} available
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTiles.map((tile) => (
-                <TileCard
-                  key={tile.id}
-                  tile={tile}
-                  pinned={pinnedTileIds.has(tile.id)}
-                  onTogglePin={(id) => togglePinMutation.mutate(id)}
-                  onLaunch={(t) => openTileEmbedded(t)}
-                />
-              ))}
-            </div>
-          </>
+          <TilesGrid
+            tiles={filteredTiles}
+            pinnedTileIds={pinnedTileIds}
+            onTogglePin={(id) => togglePinMutation.mutate(id)}
+            onLaunch={openTileEmbedded}
+          />
         )}
       </main>
 
