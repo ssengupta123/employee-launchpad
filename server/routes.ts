@@ -1,7 +1,37 @@
+import express from "express";
 import type { Express, RequestHandler } from "express";
 import type { Server } from "node:http";
+import path from "node:path";
+import fs from "node:fs";
+import multer from "multer";
 import { storage } from "./storage";
 import { insertTileSchema, insertCategorySchema } from "@shared/schema";
+
+const uploadsDir = path.resolve(process.cwd(), "uploads");
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+]);
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      const ext = path.extname(file.originalname);
+      cb(null, `${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIME_TYPES.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPEG, PNG, GIF, and WebP images are allowed"));
+    }
+  },
+});
 
 function isAzure(): boolean {
   return !!(process.env.AZURE_SQL_CONNECTION_STRING || process.env.AZURE_SQL_SERVER);
@@ -18,6 +48,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use("/uploads", express.static(uploadsDir));
+
   let isAuthenticated: RequestHandler;
 
   if (isAzure()) {
@@ -148,6 +183,14 @@ export async function registerRoutes(
       res.status(500).json({ message: "Failed to verify admin" });
     }
   };
+
+  app.post("/api/admin/upload", isAuthenticated, requireAdmin, upload.single("file"), (req: any, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl });
+  });
 
   app.get("/api/admin/tiles", isAuthenticated, requireAdmin, async (req, res) => {
     try {

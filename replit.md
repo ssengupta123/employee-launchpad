@@ -29,6 +29,7 @@ The app automatically selects the database based on environment variables:
 - Pin/unpin favourite apps
 - Category-based filtering and search
 - Admin panel for managing tiles and categories
+- Admin image upload for tile logos and cover images (via multer, stored in `client/public/uploads/`)
 - First logged-in user automatically becomes admin
 - Dark/light mode toggle
 
@@ -62,6 +63,7 @@ The app auto-selects auth based on environment:
 - `DELETE /api/user-tiles/:tileId` - Unpin a tile (authenticated)
 - `GET /api/admin/check` - Check admin status (authenticated)
 - `GET /api/admin/tiles` - Get all tiles (admin)
+- `POST /api/admin/upload` - Upload image file (admin, returns URL)
 - `POST /api/admin/tiles` - Create tile (admin)
 - `PATCH /api/admin/tiles/:id` - Update tile (admin)
 - `DELETE /api/admin/tiles/:id` - Delete tile (admin)

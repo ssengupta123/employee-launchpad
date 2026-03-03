@@ -47,6 +47,10 @@ import {
   LayoutGrid,
   FolderOpen,
   Globe,
+  Upload,
+  X,
+  ImageIcon,
+  Loader2,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 const reasonLogo = "/reason-group-logo.png";
@@ -59,6 +63,80 @@ const CAT_SKELETON_IDS = ["cs-1", "cs-2", "cs-3"];
 function getSubmitLabel(isPending: boolean, isEditing: boolean): string {
   if (isPending) return "Saving...";
   return isEditing ? "Update" : "Create";
+}
+
+async function uploadFile(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch("/api/admin/upload", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Upload failed");
+  const data = await res.json();
+  return data.url;
+}
+
+function ImageUploadField({ label, value, onChange, hint, testId }: Readonly<{
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  hint: string;
+  testId: string;
+}>) {
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadFile(file);
+      onChange(url);
+    } catch {
+      console.error("Upload failed");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+      {value && (
+        <div className="relative inline-block">
+          <img src={value} alt={label} className="h-16 w-auto rounded-md border object-contain bg-muted" />
+          <button
+            type="button"
+            className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center"
+            onClick={() => onChange("")}
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+      <div className="flex items-center gap-2">
+        <label className="cursor-pointer" data-testid={testId}>
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={uploading} />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border rounded-md hover:bg-accent transition-colors">
+            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+            {uploading ? "Uploading..." : "Choose file"}
+          </span>
+        </label>
+        <span className="text-xs text-muted-foreground">or</span>
+        <Input
+          placeholder="Paste image URL"
+          value={value.startsWith("/uploads/") ? "" : value}
+          onChange={(e) => onChange(e.target.value)}
+          className="flex-1 h-8 text-xs"
+          data-testid={`${testId}-url`}
+        />
+      </div>
+    </div>
+  );
 }
 
 const ICON_OPTIONS = [
@@ -75,6 +153,10 @@ const COLOR_OPTIONS = [
   "#0EA5E9", "#D946EF",
 ];
 
+function isImageUrl(value: string) {
+  return value.startsWith("/") || value.startsWith("http://") || value.startsWith("https://");
+}
+
 function TileForm({
   tile,
   categories,
@@ -88,14 +170,20 @@ function TileForm({
   isPending: boolean;
   onClose: () => void;
 }>) {
+  const existingIconIsImage = tile?.icon ? isImageUrl(tile.icon) : false;
   const [title, setTitle] = useState(tile?.title || "");
   const [description, setDescription] = useState(tile?.description || "");
   const [url, setUrl] = useState(tile?.url || "");
-  const [icon, setIcon] = useState(tile?.icon || "Globe");
+  const [iconType, setIconType] = useState<"preset" | "custom">(existingIconIsImage ? "custom" : "preset");
+  const [presetIcon, setPresetIcon] = useState(existingIconIsImage ? "Globe" : (tile?.icon || "Globe"));
+  const [customIconUrl, setCustomIconUrl] = useState(existingIconIsImage ? tile!.icon : "");
+  const [imageUrl, setImageUrl] = useState(tile?.imageUrl || "");
   const [color, setColor] = useState(tile?.color || "#3B82F6");
   const [categoryId, setCategoryId] = useState(tile?.categoryId || "");
   const [isGlobal, setIsGlobal] = useState(tile?.isGlobal ?? true);
   const [openInNewTab, setOpenInNewTab] = useState(tile?.openInNewTab ?? true);
+
+  const resolvedIcon = iconType === "custom" && customIconUrl ? customIconUrl : presetIcon;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,11 +191,12 @@ function TileForm({
       title,
       description: description || null,
       url,
-      icon,
+      icon: resolvedIcon,
       color,
       categoryId: categoryId || null,
       isGlobal,
       openInNewTab,
+      imageUrl: imageUrl || null,
       sortOrder: tile?.sortOrder || 0,
     });
   };
@@ -126,10 +215,33 @@ function TileForm({
         <Label htmlFor="url">URL</Label>
         <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} required type="url" placeholder="https://" data-testid="input-tile-url" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Icon</Label>
-          <Select value={icon} onValueChange={setIcon}>
+
+      <div className="space-y-3">
+        <Label>Logo / Icon</Label>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={iconType === "preset" ? "default" : "outline"}
+            onClick={() => setIconType("preset")}
+            data-testid="button-icon-preset"
+          >
+            <LayoutGrid className="w-3.5 h-3.5 mr-1" />
+            Preset Icon
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={iconType === "custom" ? "default" : "outline"}
+            onClick={() => setIconType("custom")}
+            data-testid="button-icon-custom"
+          >
+            <ImageIcon className="w-3.5 h-3.5 mr-1" />
+            Custom Image
+          </Button>
+        </div>
+        {iconType === "preset" ? (
+          <Select value={presetIcon} onValueChange={setPresetIcon}>
             <SelectTrigger data-testid="select-tile-icon"><SelectValue /></SelectTrigger>
             <SelectContent>
               {ICON_OPTIONS.map((i) => (
@@ -137,19 +249,36 @@ function TileForm({
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Category</Label>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger data-testid="select-tile-category"><SelectValue placeholder="None" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        ) : (
+          <ImageUploadField
+            label=""
+            value={customIconUrl}
+            onChange={setCustomIconUrl}
+            hint="Upload a logo image (PNG, JPEG, GIF, WebP). Recommended: square, at least 128x128px."
+            testId="upload-tile-icon"
+          />
+        )}
+      </div>
+
+      <ImageUploadField
+        label="Cover Image"
+        value={imageUrl}
+        onChange={setImageUrl}
+        hint="Optional banner image displayed at the top of the tile card. Recommended: 800x400px."
+        testId="upload-tile-cover"
+      />
+
+      <div className="space-y-2">
+        <Label>Category</Label>
+        <Select value={categoryId} onValueChange={setCategoryId}>
+          <SelectTrigger data-testid="select-tile-category"><SelectValue placeholder="None" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="space-y-2">
         <Label>Colour</Label>
